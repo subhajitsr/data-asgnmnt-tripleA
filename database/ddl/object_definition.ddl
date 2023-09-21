@@ -1,5 +1,5 @@
 create database TESTDB;
-user database TESTDB;
+use database TESTDB;
 create schema CORE;
 
 -- Create the S3 stage
