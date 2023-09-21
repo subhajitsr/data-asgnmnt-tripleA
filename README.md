@@ -25,8 +25,8 @@ Below is a list of the columns included in the dataset and their meaning.
 1. The solution is built to be run in an Airflow scheduler. the `loan-application-core-loader.py` file in the 'dags' folder needs to be placed in the `airflow/dags` directory of the instance.
 2. All the necessary Pypi packages are mentioned in the `requirements.txt`. Same needs to be installed in the AIrflow instance before the dag deployment.
 3. Need to set the AWS/Snowflake connectivity details in the Airflow variable as below,
-   - SF_USERNAME: Snowflake DB username
-   - SF_PASSWORD: Password for the username
-   - SF_ACCOUNT: Snowflake account name
-   - AWS_ACCESS_KEY: Access key for AWS connectivity for S3 access
-   - AWS_SECRET_KEY: Secret key for the access key
+   - `SF_USERNAME`: Snowflake DB username
+   - `SF_PASSWORD`: Password for the username
+   - `SF_ACCOUNT`: Snowflake account name
+   - `AWS_ACCESS_KEY`: Access key for AWS connectivity for S3 access
+   - `AWS_SECRET_KEY`: Secret key for the access key
