@@ -112,8 +112,8 @@ def fn_load_s3_to_sf_wrk(**context):
                 num_of_time_30_59_days_past_due_not_worse,debt_ratio,monthly_income,num_of_open_cred_ln_n_loans,
                 num_of_times_90days_late,num_real_estate_loans_or_lines,num_of_time_60_89_day_past_due_nt_worse,
                 number_of_dependents,_file_name,_load_ts)
-                FROM (select trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$4), trim(hdr.$5),trim(hdr.$6), 
-                trim(hdr.$7), trim(hdr.$8), trim(hdr.$9), trim(hdr.$10), trim(hdr.$11),
+                FROM (select trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$5), trim(hdr.$6),trim(hdr.$7),
+                trim(hdr.$8), trim(hdr.$9), trim(hdr.$10), trim(hdr.$11), trim(hdr.$12),
                 '{s3_obj}','{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}' from @{s3_stage_name} hdr)
                 FILES = ('{s3_obj}')
                 FILE_FORMAT = (TYPE = 'CSV')"""
