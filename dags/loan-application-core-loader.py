@@ -26,7 +26,7 @@ dag = DAG('loan-application-core-loader-v1',
 # AWS Creds
 aws_access_key_id = Variable.get("AWS_ACCESS_KEY")
 aws_secret_access_key = Variable.get("AWS_SECRET_KEY")
-s3_bucket_name = "loan-test001"
+s3_bucket_name = Variable.get("S3_BUCKET_NAME")
 s3_path = "loan-data/dump"
 
 # Snowflake details
