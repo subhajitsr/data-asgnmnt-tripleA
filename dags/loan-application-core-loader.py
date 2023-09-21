@@ -52,7 +52,8 @@ dbcon = snowflake.connector.connect(
     password=sf_password,
     account=sf_account,
     warehouse=sf_warehouse,
-    database=sf_database
+    database=sf_database,
+    schema=sf_schema
 )
 
 
@@ -78,7 +79,7 @@ def fn_load_to_s3(**context):
                 s3_client.put_object(
                     Bucket=s3_bucket_name,
                     Key=s3_object_key,
-                    Body=df.to_csv(index=False),
+                    Body=df.to_csv(index=False, header=False),
                 )
                 upload_flag = 1
             except Exception as e:
@@ -111,8 +112,10 @@ def fn_load_s3_to_sf_wrk(**context):
                 num_of_time_30_59_days_past_due_not_worse,debt_ratio,monthly_income,num_of_open_cred_ln_n_loans,
                 num_of_times_90days_late,num_real_estate_loans_or_lines,num_of_time_60_89_day_past_due_nt_worse,
                 number_of_dependents,_file_name,_load_ts)
-                FROM (select hdr.$2, hdr.$3, hdr.$4, hdr.$4, hdr.$5,hdr.$6, hdr.$7, hdr.$8, hdr.$9, hdr.$10, hdr.$11, 
-                '{s3_obj}','{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}' from @%{s3_stage_name}/{s3_obj} hdr)
+                FROM (select trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$4), trim(hdr.$5),trim(hdr.$6), 
+                trim(hdr.$7), trim(hdr.$8), trim(hdr.$9), trim(hdr.$10), trim(hdr.$11),
+                '{s3_obj}','{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}' from @{s3_stage_name} hdr)
+                FILES = ('{s3_obj}')
                 FILE_FORMAT = (TYPE = 'CSV')"""
                 )
             logging.info(f"Successfully loaded data from {s3_obj} "
