@@ -103,27 +103,24 @@ def fn_load_s3_to_sf_wrk(**context):
     # Convert the list-String to list (Xcom always stores context variables as string)
     s3_obj_list = ast.literal_eval(s3_obj_list)
     logging.info(f"File list to load: {s3_obj_list}")
-    for s3_obj in s3_obj_list:
-        logging.info(f"Attempting to load file {s3_obj}")
-        try:
-            cursor = dbcon.cursor()
-            cursor.execute(f"""
-                COPY INTO {sf_schema}.{sf_table}(serious_dlq_in_2yrs,revolving_util_of_unsecured_lines,age,
-                num_of_time_30_59_days_past_due_not_worse,debt_ratio,monthly_income,num_of_open_cred_ln_n_loans,
-                num_of_times_90days_late,num_real_estate_loans_or_lines,num_of_time_60_89_day_past_due_nt_worse,
-                number_of_dependents,_file_name,_load_ts)
-                FROM (select trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$5), trim(hdr.$6),trim(hdr.$7),
-                trim(hdr.$8), trim(hdr.$9), trim(hdr.$10), trim(hdr.$11), trim(hdr.$12),
-                '{s3_obj}','{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}' from @{s3_stage_name} hdr)
-                FILES = ('{s3_obj}')
-                FILE_FORMAT = (TYPE = 'CSV')"""
-                )
-            logging.info(f"Successfully loaded data from {s3_obj} "
-                         f"into Snowflake table {sf_schema}.{sf_table}.")
-        except Exception as e:
-            raise Exception(f"{s3_obj} File to DB load error. {e}")
-        finally:
-            cursor.close()
+    try:
+        cursor = dbcon.cursor()
+        cursor.execute(f"""
+            COPY INTO {sf_schema}.{sf_table}(serious_dlq_in_2yrs,revolving_util_of_unsecured_lines,age,
+            num_of_time_30_59_days_past_due_not_worse,debt_ratio,monthly_income,num_of_open_cred_ln_n_loans,
+            num_of_times_90days_late,num_real_estate_loans_or_lines,num_of_time_60_89_day_past_due_nt_worse,
+            number_of_dependents,_file_name,_load_ts)
+            FROM (select trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$5), trim(hdr.$6),trim(hdr.$7),
+            trim(hdr.$8), trim(hdr.$9), trim(hdr.$10), trim(hdr.$11), trim(hdr.$12),
+            METADATA$FILENAME,current_timestamp from @{s3_stage_name} hdr)
+            FILE_FORMAT = (TYPE = 'CSV')"""
+            )
+        logging.info(f"Successfully loaded data from {s3_obj_list} "
+                        f"into Snowflake table {sf_schema}.{sf_table}.")
+    except Exception as e:
+        raise Exception(f"File to DB load error. {e}")
+    finally:
+        cursor.close()
 
     logging.info("fn_load_s3_to_sf completed")
     dbcon.close()
