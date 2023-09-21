@@ -41,16 +41,16 @@ _load_ts
 ) as
 SELECT
 cast(serious_dlq_in_2yrs as integer) as serious_dlq_in_2yrs,
-cast(revolving_util_of_unsecured_lines as number(10,18)) as revolving_util_of_unsecured_lines ,
+cast(revolving_util_of_unsecured_lines as number(18,18)) as revolving_util_of_unsecured_lines ,
 cast(age as integer) as age,
 cast(num_of_time_30_59_days_past_due_not_worse as integer) as num_of_time_30_59_days_past_due_not_worse,
-cast(debt_ratio as number(10,18)) as debt_ratio ,
-case when trim(monthly_income)=='NA' then null else cast(monthly_income as number(15,0)) end as monthly_income,
+cast(debt_ratio as number(18,18)) as debt_ratio ,
+case when trim(monthly_income)='NA' then null else cast(monthly_income as number(15,0)) end as monthly_income,
 cast(num_of_open_cred_ln_n_loans as integer) as num_of_open_cred_ln_n_loans,
 cast(num_of_times_90days_late as integer) as num_of_times_90days_late,
 cast(num_real_estate_loans_or_lines as integer) as num_real_estate_loans_or_lines,
 cast(num_of_time_60_89_day_past_due_nt_worse as integer) as num_of_time_60_89_day_past_due_nt_worse,
-case when trim(number_of_dependents)=='NA' then null else cast(number_of_dependents as integer) end as number_of_dependents,
+case when trim(number_of_dependents)='NA' then null else cast(number_of_dependents as integer) end as number_of_dependents,
 _file_name,
 _load_ts
 FROM TESTDB.CORE.tbl_loan_application
