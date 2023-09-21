@@ -28,3 +28,7 @@ Below is a list of the columns included in the dataset and their meaning.
    - `SF_ACCOUNT`: Snowflake account name
    - `AWS_ACCESS_KEY`: Access key for AWS connectivity for S3 access
    - `AWS_SECRET_KEY`: Secret key for the access key
+4. Execute the DDLs (`database/object_definition.ddl`) in the Snowflake datbase where the data is intended to be landed.
+5. Create the `/inbox/loan-data` and `/archive/loan-data` directory in the Airflow local folder.
+6. Create the bucket named `TEST001` in AWS S3 datalake.
+7. Under the above bucket create the path, `loan-data/dump`
