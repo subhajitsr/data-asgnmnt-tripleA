@@ -1,5 +1,3 @@
-# data-asgnmnt-tripleA
-
 ## Data Description
 
 This dataset is part of the Give Me Some Credit Kaggle competition. The data contains loan applicant information collected by a US credit bureau. Each row represents a single loan application and the information gathered on the applicant at the time of the application.
