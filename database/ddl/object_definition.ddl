@@ -1,3 +1,7 @@
+create database TESTDB;
+user database TESTDB;
+create schema CORE;
+
 -- Create the S3 stage
 CREATE OR REPLACE STAGE stg_s3_loan_application
   URL = 's3://TEST001/loan-data/dump'
