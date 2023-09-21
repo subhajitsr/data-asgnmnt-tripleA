@@ -21,7 +21,7 @@ Below is a list of the columns included in the dataset and their meaning.
 |NumberOfTime60-89Days PastDueNotWorse|Number of times borrower has been 60-89 days past due but no worse in the last 2 years.|Integer|
 |NumberOfDependents|Number of dependents in family excluding applicant (spouse, children, etc...).|Integer|
 
-## Solution hint:
+## Data Pipeline Solution hint:
 1. The solution is built to be run in an Airflow scheduler. the `loan-application-core-loader.py` file in the 'dags' folder needs to be placed in the `airflow/dags` directory of the instance.
 2. All the necessary Pypi packages are mentioned in the `requirements.txt`. Same needs to be installed in the AIrflow instance before the dag deployment.
 3. Need to set the AWS/Snowflake connectivity details in the Airflow variable as below,
