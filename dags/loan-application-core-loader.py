@@ -142,7 +142,7 @@ def fn_process_semantic():
     select * from TESTDB.CORE.vw_loan_application
     where _load_ts > (select coalesce(max(_load_ts),'2000-01-01 00:00:00') from TESTDB.SEMANTIC.tbl_loan_application);
     """, dbcon)
-    if data:
+    if not data.empty:
         # Removing outliers
         data = fn_remove_outliers(data, 'DEBT_RATIO')
         data = fn_remove_outliers(data, 'REVOLVING_UTIL_OF_UNSECURED_LINES')
