@@ -96,10 +96,10 @@ _load_ts
 ) as
 select
 serious_dlq_in_2yrs,
-revolving_util_of_unsecured_lines,
+case when revolving_util_of_unsecured_lines>1 then 1 else revolving_util_of_unsecured_lines end as revolving_util_of_unsecured_lines,
 age,
 num_of_time_30_59_days_past_due_not_worse,
-debt_ratio,
+case when debt_ratio>1 then 1 else debt_ratio end as debt_ratio,
 monthly_income,
 num_of_open_cred_ln_n_loans,
 num_of_times_90days_late,
