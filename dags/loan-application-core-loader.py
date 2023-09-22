@@ -15,6 +15,9 @@ import pandas as pd
 import boto3
 import snowflake.connector
 import ast
+import numpy as np
+from scipy import stats
+from snowflake.connector.pandas_tools import write_pandas
 
 dag = DAG('loan-application-core-loader-v1',
           description='extracts loan application data from offline CSV file to S3 -> SF DB',
@@ -40,8 +43,8 @@ sf_table = 'tbl_loan_application'
 s3_stage_name = "stg_s3_loan_application"
 
 # local path of the csv files
-local_directory = '/inbox/loan-data'
-local_archived_directory = '/archive/loan-data'
+local_directory = './inbox/loan-data'
+local_archived_directory = './archive/loan-data'
 
 # Initialising S3 client
 s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
@@ -57,6 +60,12 @@ dbcon = snowflake.connector.connect(
 )
 
 
+def fn_remove_outliers(df, column_name, threshold=3):
+    z_scores = np.abs(stats.zscore(df[column_name]))
+    df_no_outliers = df[np.abs(z_scores) <= threshold]
+    return df_no_outliers
+
+
 def fn_load_to_s3(**context):
     # fetch the list of csv files in the path
     csv_files = [f for f in os.listdir(local_directory) if f.endswith('.csv')]
@@ -67,7 +76,7 @@ def fn_load_to_s3(**context):
             upload_flag = 0
 
             # Appending filename with timestamp to avoid file name conflict in S3
-            file_name_s3 = f"{file_name}_{str(int(round(time.time())))}"
+            file_name_s3 = f"{file_name.split('.csv')[0]}_{str(int(round(time.time())))}.csv"
             # s3 object key
             s3_object_key = f'{s3_path}/{file_name_s3}'
 
@@ -98,7 +107,7 @@ def fn_load_to_s3(**context):
     logging.info("fn_load_to_s3 completed")
 
 
-def fn_load_s3_to_sf_wrk(**context):
+def fn_load_s3_to_sf(**context):
     s3_obj_list = context['ti'].xcom_pull(key='s3_obj_key_list')
     # Convert the list-String to list (Xcom always stores context variables as string)
     s3_obj_list = ast.literal_eval(s3_obj_list)
@@ -113,7 +122,7 @@ def fn_load_s3_to_sf_wrk(**context):
             FROM (select trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$5), trim(hdr.$6),trim(hdr.$7),
             trim(hdr.$8), trim(hdr.$9), trim(hdr.$10), trim(hdr.$11), trim(hdr.$12),
             METADATA$FILENAME,current_timestamp from @{s3_stage_name} hdr)
-            FILE_FORMAT = (TYPE = 'CSV')"""
+            FILE_FORMAT = (TYPE = 'CSV');"""
             )
         logging.info(f"Successfully loaded data from {s3_obj_list} "
                         f"into Snowflake table {sf_schema}.{sf_table}.")
@@ -126,6 +135,32 @@ def fn_load_s3_to_sf_wrk(**context):
     dbcon.close()
 
 
+def fn_process_semantic():
+    logging.info("starting fn_process_semantic")
+    # Fetching incremental data to pandas df
+    data = pd.read_sql(f"""
+    select * from TESTDB.CORE.vw_loan_application
+    where _load_ts > (select coalesce(max(_load_ts),'2000-01-01 00:00:00') TESTDB.SEMANTIC.tbl_loan_application);
+    """, dbcon)
+
+    # Removing outliers
+    data = fn_remove_outliers(data, 'DEBT_RATIO')
+    data = fn_remove_outliers(data, 'REVOLVING_UTIL_OF_UNSECURED_LINES')
+
+    # Loading back to the database
+    success, nchunks, nrows, _ = write_pandas(conn=dbcon,
+                                              df=data,
+                                              table_name='TBL_LOAN_APPLICATION',
+                                              database='TESTDB',
+                                              schema='SEMANTIC')
+    logging.info(f"""
+    Success: {success}
+    Chunks: {nchunks}
+    Rows: {nrows}
+    """)
+    logging.info("fn_process_semantic completed.")
+
+
 # Define tasks
 task_load_to_s3 = PythonOperator(
     task_id='task_load_to_s3',
@@ -136,12 +171,19 @@ task_load_to_s3 = PythonOperator(
 
 task_load_s3_to_sf = PythonOperator(
     task_id='task_load_s3_to_sf',
-    python_callable=fn_load_s3_to_sf_wrk,
+    python_callable=fn_load_s3_to_sf,
+    provide_context=True,
+    dag=dag,
+)
+
+task_load_semantic = PythonOperator(
+    task_id='task_load_semantic',
+    python_callable=fn_process_semantic,
     provide_context=True,
     dag=dag,
 )
 
 # Define task dependency
-task_load_to_s3 >> task_load_s3_to_sf
+task_load_to_s3 >> task_load_s3_to_sf >> task_load_semantic
 
 
