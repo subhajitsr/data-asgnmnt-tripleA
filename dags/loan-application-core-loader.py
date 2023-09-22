@@ -140,24 +140,23 @@ def fn_process_semantic():
     # Fetching incremental data to pandas df
     data = pd.read_sql(f"""
     select * from TESTDB.CORE.vw_loan_application
-    where _load_ts > (select coalesce(max(_load_ts),'2000-01-01 00:00:00') TESTDB.SEMANTIC.tbl_loan_application);
+    where _load_ts > (select coalesce(max(_load_ts),'2000-01-01 00:00:00') from TESTDB.SEMANTIC.tbl_loan_application);
     """, dbcon)
-
-    # Removing outliers
-    data = fn_remove_outliers(data, 'DEBT_RATIO')
-    data = fn_remove_outliers(data, 'REVOLVING_UTIL_OF_UNSECURED_LINES')
-
-    # Loading back to the database
-    success, nchunks, nrows, _ = write_pandas(conn=dbcon,
-                                              df=data,
-                                              table_name='TBL_LOAN_APPLICATION',
-                                              database='TESTDB',
-                                              schema='SEMANTIC')
-    logging.info(f"""
-    Success: {success}
-    Chunks: {nchunks}
-    Rows: {nrows}
-    """)
+    if data:
+        # Removing outliers
+        data = fn_remove_outliers(data, 'DEBT_RATIO')
+        data = fn_remove_outliers(data, 'REVOLVING_UTIL_OF_UNSECURED_LINES')
+        # Loading back to the database
+        success, nchunks, nrows, _ = write_pandas(conn=dbcon,
+                                                  df=data,
+                                                  table_name='TBL_LOAN_APPLICATION',
+                                                  database='TESTDB',
+                                                  schema='SEMANTIC')
+        print(f"""
+        Success: {success}
+        Chunks: {nchunks}
+        Rows: {nrows}
+        """)
     logging.info("fn_process_semantic completed.")
 
 
