@@ -13,6 +13,7 @@ CREATE OR REPLACE STAGE stg_s3_loan_application
 
 -- Create the core table
 create or replace TABLE TESTDB.CORE.tbl_loan_application (
+    _index VARCHAR(15),
 	serious_dlq_in_2yrs VARCHAR(50),
     revolving_util_of_unsecured_lines VARCHAR(20),
     age VARCHAR(30),
@@ -30,6 +31,7 @@ create or replace TABLE TESTDB.CORE.tbl_loan_application (
 
 -- Create core view
 create or replace view TESTDB.CORE.vw_loan_application(
+_index,
 serious_dlq_in_2yrs,
 revolving_util_of_unsecured_lines,
 age,
@@ -45,6 +47,7 @@ _file_name,
 _load_ts
 ) as
 SELECT
+cast(trim(_index) as integer) as _index,
 cast(serious_dlq_in_2yrs as integer) as serious_dlq_in_2yrs,
 to_number(revolving_util_of_unsecured_lines,18,10) as revolving_util_of_unsecured_lines ,
 cast(age as integer) as age,
@@ -63,6 +66,7 @@ FROM TESTDB.CORE.tbl_loan_application
 
 -- Create the Semantic table
 create or replace TABLE TESTDB.SEMANTIC.tbl_loan_application (
+    _index integer,
 	serious_dlq_in_2yrs VARCHAR(50),
     revolving_util_of_unsecured_lines VARCHAR(20),
     age VARCHAR(30),
@@ -80,6 +84,7 @@ create or replace TABLE TESTDB.SEMANTIC.tbl_loan_application (
 
 -- Create Semantic view
 create or replace view TESTDB.SEMANTIC.vw_loan_application(
+_index,
 serious_dlq_in_2yrs,
 revolving_util_of_unsecured_lines,
 age,
@@ -95,6 +100,7 @@ _file_name,
 _load_ts
 ) as
 select
+_index,
 serious_dlq_in_2yrs,
 case when revolving_util_of_unsecured_lines>1 then 1 else revolving_util_of_unsecured_lines end as revolving_util_of_unsecured_lines,
 age,
@@ -117,7 +123,7 @@ create or replace view TESTDB.SEMANTIC.loan_application_agg(
 age_group,
 num_of_dependents_group,
 monthly_income_group,
-serious_dlq_in_2yrs,
+sum_serious_dlq_in_2yrs,
 avg_debt_ratio,
 sum_num_of_open_cred_ln_n_loans,
 sum_num_real_estate_loans_or_lines,
@@ -127,7 +133,7 @@ sum_60_89_day_past_due_nt_worse,
 sum_90days_late
 ) as
 select
-case when age<20 then 'teenagers'
+case when age>=18 and age<20 then 'teenagers'
     when age >=20 and age<30 then '20s'
     when age >=30 and age<40 then '30s'
     when age >=40 and age<50 then '40s'
@@ -150,7 +156,7 @@ case when monthly_income < 1000 then '<1k'
      when monthly_income >= 15000 and monthly_income<20000 then '15k-20k'
      when monthly_income >= 20000 then '>20k'
      else 'Unknown' end as monthly_income_group,
-serious_dlq_in_2yrs,
+sum(serious_dlq_in_2yrs) as sum_serious_dlq_in_2yrs,
 avg(coalesce(debt_ratio,0)) as avg_debt_ratio,
 sum(coalesce(num_of_open_cred_ln_n_loans,0)) as sum_num_of_open_cred_ln_n_loans,
 sum(coalesce(num_real_estate_loans_or_lines,0)) as sum_num_real_estate_loans_or_lines,
@@ -159,5 +165,5 @@ sum(coalesce(num_of_time_30_59_days_past_due_not_worse,0)) as sum_30_59_days_pas
 sum(coalesce(num_of_time_60_89_day_past_due_nt_worse,0)) as sum_60_89_day_past_due_nt_worse,
 sum(coalesce(num_of_times_90days_late,0)) as sum_90days_late
 from TESTDB.SEMANTIC.vw_loan_application
-group by age_group,monthly_income_group,number_of_dependents,serious_dlq_in_2yrs
+group by age_group,monthly_income_group,number_of_dependents
 ;

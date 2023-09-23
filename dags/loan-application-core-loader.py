@@ -115,11 +115,11 @@ def fn_load_s3_to_sf(**context):
     try:
         cursor = dbcon.cursor()
         cursor.execute(f"""
-            COPY INTO {sf_schema}.{sf_table}(serious_dlq_in_2yrs,revolving_util_of_unsecured_lines,age,
+            COPY INTO {sf_schema}.{sf_table}(_index,serious_dlq_in_2yrs,revolving_util_of_unsecured_lines,age,
             num_of_time_30_59_days_past_due_not_worse,debt_ratio,monthly_income,num_of_open_cred_ln_n_loans,
             num_of_times_90days_late,num_real_estate_loans_or_lines,num_of_time_60_89_day_past_due_nt_worse,
             number_of_dependents,_file_name,_load_ts)
-            FROM (select trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$5), trim(hdr.$6),trim(hdr.$7),
+        FROM (select trim(hdr.$1), trim(hdr.$2), trim(hdr.$3), trim(hdr.$4), trim(hdr.$5), trim(hdr.$6),trim(hdr.$7),
             trim(hdr.$8), trim(hdr.$9), trim(hdr.$10), trim(hdr.$11), trim(hdr.$12),
             METADATA$FILENAME,current_timestamp from @{s3_stage_name} hdr)
             FILE_FORMAT = (TYPE = 'CSV');"""
@@ -143,6 +143,9 @@ def fn_process_semantic():
     where _load_ts > (select coalesce(max(_load_ts),'2000-01-01 00:00:00') from TESTDB.SEMANTIC.tbl_loan_application);
     """, dbcon)
     if not data.empty:
+
+        # Removing duplicates
+        data = data.drop_duplicates()
         # Removing outliers
         data = fn_remove_outliers(data, 'DEBT_RATIO')
         data = fn_remove_outliers(data, 'REVOLVING_UTIL_OF_UNSECURED_LINES')
